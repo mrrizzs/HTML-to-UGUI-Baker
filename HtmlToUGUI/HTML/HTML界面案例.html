@@ -1,0 +1,146 @@
+<div data-u-type="div" data-u-name="StellarNetDashboard" style="width: 1920px; height: 1080px; background-color: #0b0f19; display: flex; flex-direction: column; font-family: sans-serif;">
+    
+    <!-- 顶部导航栏 -->
+    <div data-u-type="div" data-u-name="TopNavigationBar" style="height: 80px; background-color: #151b2b; border-bottom: 2px solid #232d42; display: flex; align-items: center; justify-content: space-between; padding: 0 30px;">
+        <div data-u-type="div" data-u-name="LogoGroup" style="display: flex; align-items: center; gap: 15px;">
+            <div data-u-type="image" data-u-name="AppLogoImg" style="width: 40px; height: 40px; background-color: #00d2ff; border-radius: 8px;"></div>
+            <span data-u-type="text" data-u-name="AppTitleTxt" style="color: #ffffff; font-size: 28px; font-weight: bold; letter-spacing: 2px;">STELLAR<span style="color: #00d2ff;">NET</span> PRO MAX</span>
+        </div>
+        <div data-u-type="div" data-u-name="GlobalStatusGroup" style="display: flex; align-items: center; gap: 20px;">
+            <span data-u-type="text" data-u-name="GlobalStatusTxt" style="color: #a0aec0; font-size: 16px;">Session: <span style="color: #fff;">0x8F9A...</span> | UID: <span style="color: #fff;">1001</span></span>
+            <button data-u-type="button" data-u-name="SimulateDisconnectBtn" style="height: 40px; padding: 0 20px; background-color: #e53e3e; color: white; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">模拟物理断网</button>
+        </div>
+    </div>
+
+    <!-- 主体内容区 -->
+    <div data-u-type="div" data-u-name="MainContentArea" style="flex: 1; display: flex; padding: 20px; gap: 20px;">
+        
+        <!-- 左侧：连接与登录面板 -->
+        <div data-u-type="div" data-u-name="LeftPanel" style="width: 400px; display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- 模式选择区 -->
+            <div data-u-type="div" data-u-name="ModeSelectionBox" style="background-color: #151b2b; border: 1px solid #232d42; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <span data-u-type="text" data-u-name="ModeTitleTxt" style="color: #00d2ff; font-size: 20px; font-weight: bold; border-bottom: 1px solid #232d42; padding-bottom: 10px;">网络模式选择</span>
+                <button data-u-type="button" data-u-name="StartHostBtn" style="height: 50px; background-color: #2b6cb0; color: white; font-size: 16px; border: none; border-radius: 4px; cursor: pointer;">Host 模式 (Server+Client)</button>
+                <button data-u-type="button" data-u-name="StartServerBtn" style="height: 50px; background-color: #2c5282; color: white; font-size: 16px; border: none; border-radius: 4px; cursor: pointer;">Server Only (独立服务端)</button>
+                <button data-u-type="button" data-u-name="StartClientBtn" style="height: 50px; background-color: #2c5282; color: white; font-size: 16px; border: none; border-radius: 4px; cursor: pointer;">Client Only (独立客户端)</button>
+            </div>
+
+            <!-- 登录与重连区 -->
+            <div data-u-type="div" data-u-name="LoginBox" style="background-color: #151b2b; border: 1px solid #232d42; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <span data-u-type="text" data-u-name="LoginTitleTxt" style="color: #00d2ff; font-size: 20px; font-weight: bold; border-bottom: 1px solid #232d42; padding-bottom: 10px;">账号登录</span>
+                <span data-u-type="text" data-u-name="LoginStatusTxt" style="color: #cbd5e0; font-size: 14px;">当前状态: 未登录</span>
+                <input data-u-type="input" data-u-name="AccountIdInput" placeholder="Player_1001" style="height: 45px; background-color: #0b0f19; border: 1px solid #4a5568; color: white; padding: 0 15px; font-size: 16px; border-radius: 4px;" />
+                <button data-u-type="button" data-u-name="LoginBtn" style="height: 50px; background-color: #38a169; color: white; font-size: 18px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">发起登录 (Login)</button>
+                
+                <div data-u-type="div" data-u-name="ReconnectGroup" style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button data-u-type="button" data-u-name="AcceptReconnectBtn" style="flex: 1; height: 40px; background-color: #d69e2e; color: white; border: none; border-radius: 4px; cursor: pointer;">接受重连</button>
+                    <button data-u-type="button" data-u-name="RejectReconnectBtn" style="flex: 1; height: 40px; background-color: #718096; color: white; border: none; border-radius: 4px; cursor: pointer;">拒绝重连</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间：大厅与列表面板 -->
+        <div data-u-type="div" data-u-name="CenterPanel" style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- 创建房间区 -->
+            <div data-u-type="div" data-u-name="CreateRoomBox" style="background-color: #151b2b; border: 1px solid #232d42; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <span data-u-type="text" data-u-name="CreateRoomTitleTxt" style="color: #00d2ff; font-size: 20px; font-weight: bold; border-bottom: 1px solid #232d42; padding-bottom: 10px;">创建房间</span>
+                <div data-u-type="div" data-u-name="CreateRoomInputGroup" style="display: flex; gap: 15px;">
+                    <input data-u-type="input" data-u-name="RoomNameInput" placeholder="输入房间名称..." style="flex: 1; height: 45px; background-color: #0b0f19; border: 1px solid #4a5568; color: white; padding: 0 15px; font-size: 16px; border-radius: 4px;" />
+                    <button data-u-type="button" data-u-name="CreateBasicRoomBtn" style="width: 160px; background-color: #4a5568; color: white; border: none; border-radius: 4px; cursor: pointer;">创建基础房间</button>
+                    <button data-u-type="button" data-u-name="CreateBattleRoomBtn" style="width: 160px; background-color: #38a169; color: white; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">创建对战房间</button>
+                </div>
+            </div>
+
+            <!-- 房间列表与录像列表 (左右分栏) -->
+            <div data-u-type="div" data-u-name="ListsContainer" style="flex: 1; display: flex; gap: 20px;">
+                
+                <!-- 房间列表 -->
+                <div data-u-type="div" data-u-name="RoomListBox" style="flex: 1; background-color: #151b2b; border: 1px solid #232d42; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                    <div data-u-type="div" data-u-name="RoomListHeader" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #232d42; padding-bottom: 10px;">
+                        <span data-u-type="text" data-u-name="RoomListTitleTxt" style="color: #00d2ff; font-size: 20px; font-weight: bold;">在线房间大厅</span>
+                        <button data-u-type="button" data-u-name="RefreshRoomListBtn" style="height: 30px; padding: 0 15px; background-color: #2b6cb0; color: white; border: none; border-radius: 4px; cursor: pointer;">刷新列表</button>
+                    </div>
+                    <div data-u-type="scroll" data-u-name="RoomListScroll" data-u-dir="v" style="flex: 1; background-color: #0b0f19; border: 1px solid #232d42; border-radius: 4px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- 房间项模板 -->
+                        <div data-u-type="div" data-u-name="RoomItemTemplate" style="background-color: #1a202c; border-left: 4px solid #38a169; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px;">
+                            <div data-u-type="div" data-u-name="RoomInfoGroup" style="display: flex; flex-direction: column; gap: 5px;">
+                                <span data-u-type="text" data-u-name="RoomItemNameTxt" style="color: white; font-size: 18px; font-weight: bold;">我的对战房间</span>
+                                <span data-u-type="text" data-u-name="RoomItemDetailsTxt" style="color: #a0aec0; font-size: 14px;">ID: 10001 | 人数: 2/4 | 状态: <span style="color: #38a169;">等待中</span></span>
+                            </div>
+                            <button data-u-type="button" data-u-name="JoinRoomBtn" style="width: 80px; height: 40px; background-color: #38a169; color: white; border: none; border-radius: 4px; cursor: pointer;">加入</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 录像列表 -->
+                <div data-u-type="div" data-u-name="ReplayListBox" style="flex: 1; background-color: #151b2b; border: 1px solid #232d42; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                    <div data-u-type="div" data-u-name="ReplayListHeader" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #232d42; padding-bottom: 10px;">
+                        <span data-u-type="text" data-u-name="ReplayListTitleTxt" style="color: #00d2ff; font-size: 20px; font-weight: bold;">云端录像大厅</span>
+                        <button data-u-type="button" data-u-name="RefreshReplayListBtn" style="height: 30px; padding: 0 15px; background-color: #00b5d8; color: white; border: none; border-radius: 4px; cursor: pointer;">刷新列表</button>
+                    </div>
+                    <div data-u-type="scroll" data-u-name="ReplayListScroll" data-u-dir="v" style="flex: 1; background-color: #0b0f19; border: 1px solid #232d42; border-radius: 4px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- 录像项模板 -->
+                        <div data-u-type="div" data-u-name="ReplayItemTemplate" style="background-color: #1a202c; border-left: 4px solid #00b5d8; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px;">
+                            <span data-u-type="text" data-u-name="ReplayIdTxt" style="color: white; font-size: 14px; word-break: break-all; width: 60%;">REP_20231025_ABCD1234</span>
+                            <button data-u-type="button" data-u-name="DownloadPlayBtn" style="width: 100px; height: 40px; background-color: #00b5d8; color: white; border: none; border-radius: 4px; cursor: pointer;">下载并播放</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 右侧：房间内与回放控制面板 -->
+        <div data-u-type="div" data-u-name="RightPanel" style="width: 450px; display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- 房间内部状态区 -->
+            <div data-u-type="div" data-u-name="InsideRoomBox" style="flex: 1; background-color: #151b2b; border: 1px solid #232d42; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <span data-u-type="text" data-u-name="InsideRoomTitleTxt" style="color: #00d2ff; font-size: 20px; font-weight: bold; border-bottom: 1px solid #232d42; padding-bottom: 10px;">当前房间: 10001</span>
+                
+                <span data-u-type="text" data-u-name="MemberListTitleTxt" style="color: #cbd5e0; font-size: 16px;">成员列表 (等待中)</span>
+                <div data-u-type="scroll" data-u-name="RoomMemberScroll" data-u-dir="v" style="flex: 1; background-color: #0b0f19; border: 1px solid #232d42; border-radius: 4px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- 成员项模板 -->
+                    <div data-u-type="div" data-u-name="MemberItemTemplate" style="background-color: #1a202c; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px;">
+                        <span data-u-type="text" data-u-name="MemberNameTxt" style="color: white; font-size: 16px;">Player_1001 <span style="color: #d69e2e;">[房主]</span> (我)</span>
+                        <span data-u-type="text" data-u-name="MemberReadyTxt" style="color: #38a169; font-weight: bold;">已准备</span>
+                    </div>
+                </div>
+
+                <div data-u-type="div" data-u-name="RoomActionGroup" style="display: flex; flex-direction: column; gap: 10px;">
+                    <button data-u-type="button" data-u-name="ToggleReadyBtn" style="height: 45px; background-color: #2b6cb0; color: white; font-size: 16px; border: none; border-radius: 4px; cursor: pointer;">切换准备状态 (Toggle Ready)</button>
+                    <button data-u-type="button" data-u-name="StartGameBtn" style="height: 50px; background-color: #38a169; color: white; font-size: 18px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">开始游戏 (Start Game)</button>
+                    <button data-u-type="button" data-u-name="ForceEndGameBtn" style="height: 40px; background-color: #e53e3e; color: white; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; display: none;">强制结束游戏</button>
+                    <button data-u-type="button" data-u-name="LeaveRoomBtn" style="height: 40px; background-color: #4a5568; color: white; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">离开房间 (Leave Room)</button>
+                </div>
+            </div>
+
+            <!-- 回放沙盒控制区 -->
+            <div data-u-type="div" data-u-name="ReplayControlBox" style="background-color: #151b2b; border: 1px solid #00b5d8; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <span data-u-type="text" data-u-name="ReplayControlTitleTxt" style="color: #00b5d8; font-size: 20px; font-weight: bold; border-bottom: 1px solid #232d42; padding-bottom: 10px;">回放沙盒模式 (ReplayRoom)</span>
+                
+                <div data-u-type="div" data-u-name="ReplayProgressGroup" style="display: flex; flex-direction: column; gap: 10px;">
+                    <span data-u-type="text" data-u-name="ReplayProgressTxt" style="color: white; font-size: 16px;">播放进度: 1250 / 5000</span>
+                    <div data-u-type="slider" data-u-name="ReplayProgressSlider" data-u-value="0.25" style="width: 100%; height: 15px; background-color: #00b5d8; border-radius: 8px;"></div>
+                </div>
+
+                <div data-u-type="div" data-u-name="ReplayPlaybackGroup" style="display: flex; gap: 10px;">
+                    <button data-u-type="button" data-u-name="PlayPauseBtn" style="flex: 1; height: 40px; background-color: #2b6cb0; color: white; border: none; border-radius: 4px; cursor: pointer;">播放 / 暂停</button>
+                    <button data-u-type="button" data-u-name="RestartReplayBtn" style="flex: 1; height: 40px; background-color: #4a5568; color: white; border: none; border-radius: 4px; cursor: pointer;">重新播放</button>
+                </div>
+
+                <div data-u-type="div" data-u-name="ReplaySpeedGroup" style="display: flex; align-items: center; gap: 10px;">
+                    <span data-u-type="text" data-u-name="SpeedLabelTxt" style="color: #cbd5e0; font-size: 14px;">倍速:</span>
+                    <button data-u-type="button" data-u-name="Speed05xBtn" style="flex: 1; height: 30px; background-color: #2d3748; color: white; border: none; border-radius: 4px; cursor: pointer;">0.5x</button>
+                    <button data-u-type="button" data-u-name="Speed10xBtn" style="flex: 1; height: 30px; background-color: #00b5d8; color: white; border: none; border-radius: 4px; cursor: pointer;">1.0x</button>
+                    <button data-u-type="button" data-u-name="Speed20xBtn" style="flex: 1; height: 30px; background-color: #2d3748; color: white; border: none; border-radius: 4px; cursor: pointer;">2.0x</button>
+                    <button data-u-type="button" data-u-name="Speed40xBtn" style="flex: 1; height: 30px; background-color: #2d3748; color: white; border: none; border-radius: 4px; cursor: pointer;">4.0x</button>
+                </div>
+
+                <button data-u-type="button" data-u-name="StopReplayBtn" style="height: 40px; background-color: #e53e3e; color: white; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px;">退出回放 (Stop Replay)</button>
+            </div>
+
+        </div>
+    </div>
+</div>
