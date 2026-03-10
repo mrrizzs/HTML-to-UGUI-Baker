@@ -23,7 +23,7 @@ namespace Editor.UIBaker
         public string color;
         public string fontColor;
         public int fontSize;
-        public string textAlign; // 核心新增：接收文本对齐方式
+        public string textAlign;
         public string text;
         public List<UIDataNode> children;
     }
@@ -94,7 +94,7 @@ namespace Editor.UIBaker
             Undo.RegisterCreatedObjectUndo(rootGo, "Bake UI Prototype");
             Selection.activeGameObject = rootGo;
 
-            Debug.Log($"[HtmlToUGUIBaker] 烘焙完成: 成功生成 UI 树 {rootGo.name}，文本对齐已同步。");
+            Debug.Log($"[HtmlToUGUIBaker] 烘焙完成: 成功生成 UI 树 {rootGo.name}，文本对齐与智能换行已应用。");
         }
 
         private void ConfigureCanvasScaler(Canvas canvas)
@@ -141,8 +141,9 @@ namespace Editor.UIBaker
             Color fontColor = ParseHexColor(nodeData.fontColor, Color.black);
             int fontSize = nodeData.fontSize > 0 ? nodeData.fontSize : 24;
 
-            // 解析对齐方式
             TextAlignmentOptions alignment = ParseTextAlign(nodeData.textAlign);
+            // 智能换行启发式：高度大于字体1.5倍视为多行文本，否则为单行文本（防止数字被挤换行）
+            bool isMultiLine = nodeData.height > (fontSize * 1.5f);
 
             switch (nodeData.type.ToLower())
             {
@@ -158,7 +159,9 @@ namespace Editor.UIBaker
                     txt.text = nodeData.text;
                     txt.color = fontColor;
                     txt.fontSize = fontSize;
-                    txt.alignment = alignment; // 应用动态对齐
+                    txt.alignment = alignment;
+                    txt.enableWordWrapping = isMultiLine;
+                    txt.overflowMode = isMultiLine ? TextOverflowModes.Truncate : TextOverflowModes.Overflow;
                     txt.raycastTarget = false;
                     return go.transform;
 
@@ -173,7 +176,9 @@ namespace Editor.UIBaker
                     btnTxt.text = nodeData.text;
                     btnTxt.color = fontColor;
                     btnTxt.fontSize = fontSize;
-                    btnTxt.alignment = alignment; // 应用动态对齐
+                    btnTxt.alignment = alignment;
+                    btnTxt.enableWordWrapping = false; // 按钮通常为单行
+                    btnTxt.overflowMode = TextOverflowModes.Overflow;
                     btnTxt.raycastTarget = false;
                     return go.transform;
 
@@ -193,14 +198,16 @@ namespace Editor.UIBaker
                     phColor.a = 0.5f;
                     phTxt.color = phColor;
                     phTxt.fontSize = fontSize;
-                    phTxt.alignment = alignment; // 应用动态对齐
+                    phTxt.alignment = alignment;
+                    phTxt.enableWordWrapping = false;
                     phTxt.raycastTarget = false;
 
                     GameObject textGo = CreateChildRect(textAreaGo, "Text", Vector2.zero, Vector2.one);
                     TextMeshProUGUI inTxt = textGo.AddComponent<TextMeshProUGUI>();
                     inTxt.color = fontColor;
                     inTxt.fontSize = fontSize;
-                    inTxt.alignment = alignment; // 应用动态对齐
+                    inTxt.alignment = alignment;
+                    inTxt.enableWordWrapping = false;
                     inTxt.raycastTarget = false;
 
                     inputField.textViewport = textAreaGo.GetComponent<RectTransform>();
@@ -257,7 +264,8 @@ namespace Editor.UIBaker
                     tLblTxt.text = nodeData.text;
                     tLblTxt.color = fontColor;
                     tLblTxt.fontSize = fontSize;
-                    tLblTxt.alignment = TextAlignmentOptions.Left; // Toggle 标签固定靠左
+                    tLblTxt.alignment = TextAlignmentOptions.MidlineLeft; // 强制垂直居中靠左
+                    tLblTxt.enableWordWrapping = false;
 
                     toggle.targetGraphic = tBgImg;
                     toggle.graphic = checkImg;
@@ -297,7 +305,8 @@ namespace Editor.UIBaker
                     TextMeshProUGUI dLblTxt = dLblGo.AddComponent<TextMeshProUGUI>();
                     dLblTxt.color = fontColor;
                     dLblTxt.fontSize = fontSize;
-                    dLblTxt.alignment = TextAlignmentOptions.Left; // Dropdown 标签固定靠左
+                    dLblTxt.alignment = TextAlignmentOptions.MidlineLeft; // 强制垂直居中靠左
+                    dLblTxt.enableWordWrapping = false;
 
                     GameObject arrowGo = CreateChildRect(go, "Arrow", new Vector2(1, 0.5f), new Vector2(1, 0.5f));
                     RectTransform arrowRect = arrowGo.GetComponent<RectTransform>();
@@ -347,7 +356,8 @@ namespace Editor.UIBaker
                     TextMeshProUGUI itemLblTxt = itemLblGo.AddComponent<TextMeshProUGUI>();
                     itemLblTxt.color = Color.black;
                     itemLblTxt.fontSize = fontSize;
-                    itemLblTxt.alignment = TextAlignmentOptions.Left;
+                    itemLblTxt.alignment = TextAlignmentOptions.MidlineLeft;
+                    itemLblTxt.enableWordWrapping = false;
 
                     itemToggle.targetGraphic = itemBgImg;
                     itemToggle.graphic = itemCheckImg;
@@ -377,23 +387,23 @@ namespace Editor.UIBaker
         }
 
         /// <summary>
-        /// 核心新增：将 HTML 的 text-align 映射为 TMP 的对齐枚举 (默认垂直居中)
+        /// 核心修正：使用 Midline 系列枚举，确保文本在垂直方向上绝对居中
         /// </summary>
         private TextAlignmentOptions ParseTextAlign(string alignStr)
         {
-            if (string.IsNullOrEmpty(alignStr)) return TextAlignmentOptions.Center;
+            if (string.IsNullOrEmpty(alignStr)) return TextAlignmentOptions.Midline;
 
             switch (alignStr.ToLower())
             {
                 case "left":
                 case "start":
-                    return TextAlignmentOptions.Left;
+                    return TextAlignmentOptions.MidlineLeft;
                 case "right":
                 case "end":
-                    return TextAlignmentOptions.Right;
+                    return TextAlignmentOptions.MidlineRight;
                 case "center":
                 default:
-                    return TextAlignmentOptions.Center;
+                    return TextAlignmentOptions.Midline;
             }
         }
 
