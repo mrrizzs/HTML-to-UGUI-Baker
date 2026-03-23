@@ -37,7 +37,6 @@ namespace Editor.UIBaker
         }
 
         private InputMode currentMode = InputMode.FileAsset;
-
         private TextAsset jsonAsset;
         private string rawJsonString = "";
         private Vector2 scrollPosition;
@@ -47,7 +46,15 @@ namespace Editor.UIBaker
         private string converterUrl = "";
         private const string PREFS_URL_KEY = "HtmlToUGUIBaker_ConverterUrl";
 
-        private readonly Vector2 REFERENCE_RESOLUTION = new Vector2(1920, 1080);
+        // 分辨率与 DSL 配置
+        private HtmlToUGUIConfig config;
+        private int selectedResolutionIndex = 0;
+        private const string PREFS_CONFIG_PATH_KEY = "HtmlToUGUIBaker_ConfigPath";
+        private const string PREFS_RES_INDEX_KEY = "HtmlToUGUIBaker_ResIndex";
+
+        // 用于在当前窗口内嵌绘制 SO 属性的序列化对象
+        private SerializedObject configSO;
+        private SerializedProperty resolutionsProp;
 
         [MenuItem("Tools/UI Architecture/HTML to UGUI Baker (Full Controls)")]
         public static void ShowWindow()
@@ -57,15 +64,23 @@ namespace Editor.UIBaker
 
         private void OnEnable()
         {
-            // 初始化时读取本地缓存的工具路径
+            // 初始化时读取本地缓存的工具路径、配置文件路径与选择的分辨率索引
             converterUrl = EditorPrefs.GetString(PREFS_URL_KEY, "");
+            string configPath = EditorPrefs.GetString(PREFS_CONFIG_PATH_KEY, "");
+            if (!string.IsNullOrEmpty(configPath))
+            {
+                config = AssetDatabase.LoadAssetAtPath<HtmlToUGUIConfig>(configPath);
+            }
+
+            selectedResolutionIndex = EditorPrefs.GetInt(PREFS_RES_INDEX_KEY, 0);
         }
 
         private void OnGUI()
         {
-            GUILayout.Label("基于坐标烘焙的 UI 原型生成工具 (支持全控件与对齐)", EditorStyles.boldLabel);
+            GUILayout.Label("基于坐标烘焙的 UI 原型生成工具 (支持多分辨率与全控件)", EditorStyles.boldLabel);
             GUILayout.Space(10);
 
+            DrawConfigUI();
             DrawExternalToolchainUI();
 
             targetCanvas = (Canvas)EditorGUILayout.ObjectField("目标 Canvas", targetCanvas, typeof(Canvas), true);
@@ -84,7 +99,6 @@ namespace Editor.UIBaker
             }
 
             GUILayout.Space(20);
-
             GUI.backgroundColor = new Color(0.2f, 0.8f, 0.2f);
             if (GUILayout.Button("执行烘焙生成", GUILayout.Height(40)))
             {
@@ -94,16 +108,88 @@ namespace Editor.UIBaker
             GUI.backgroundColor = Color.white;
         }
 
+        #region UI 绘制逻辑
+
         /// <summary>
-        /// 渲染外部工具链桥接 UI，支持配置持久化、文件选择器与一键唤起浏览器
+        /// 渲染分辨率配置与 DSL 文档生成 UI
         /// </summary>
+        private void DrawConfigUI()
+        {
+            GUILayout.Label("多分辨率与 DSL 配置", EditorStyles.label);
+            GUILayout.BeginVertical("box");
+
+            EditorGUI.BeginChangeCheck();
+            config = (HtmlToUGUIConfig)EditorGUILayout.ObjectField("配置文件 (SO)", config, typeof(HtmlToUGUIConfig), false);
+            if (EditorGUI.EndChangeCheck())
+            {
+                string path = config != null ? AssetDatabase.GetAssetPath(config) : "";
+                EditorPrefs.SetString(PREFS_CONFIG_PATH_KEY, path);
+                selectedResolutionIndex = 0;
+                EditorPrefs.SetInt(PREFS_RES_INDEX_KEY, selectedResolutionIndex);
+                configSO = null; // 切换配置时清空序列化缓存
+            }
+
+            if (config == null)
+            {
+                EditorGUILayout.HelpBox("请先创建并分配 HtmlToUGUIConfig 配置文件。\n(右键 Project 窗口 -> Create -> UI Architecture -> HtmlToUGUI Config)", MessageType.Warning);
+                GUILayout.EndVertical();
+                GUILayout.Space(10);
+                return;
+            }
+
+            // 引入 SerializedObject 以便在编辑器窗口内直接绘制和修改 SO 的数组，实现就地拓展分辨率
+            if (configSO == null || configSO.targetObject != config)
+            {
+                configSO = new SerializedObject(config);
+                resolutionsProp = configSO.FindProperty("supportedResolutions");
+            }
+
+            configSO.Update();
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(resolutionsProp, new GUIContent("分辨率预设列表 (可自由增删)"), true);
+            if (EditorGUI.EndChangeCheck())
+            {
+                configSO.ApplyModifiedProperties();
+            }
+
+            if (config.supportedResolutions == null || config.supportedResolutions.Count == 0)
+            {
+                EditorGUILayout.HelpBox("配置文件中未定义任何分辨率数据，请点击上方列表的 '+' 号添加。", MessageType.Error);
+                GUILayout.EndVertical();
+                GUILayout.Space(10);
+                return;
+            }
+
+            // 防御性处理：防止删减列表项导致缓存的索引越界
+            selectedResolutionIndex = Mathf.Clamp(selectedResolutionIndex, 0, config.supportedResolutions.Count - 1);
+            string[] resNames = new string[config.supportedResolutions.Count];
+            for (int i = 0; i < config.supportedResolutions.Count; i++)
+            {
+                resNames[i] = config.supportedResolutions[i].displayName;
+            }
+
+            EditorGUI.BeginChangeCheck();
+            selectedResolutionIndex = EditorGUILayout.Popup("目标分辨率", selectedResolutionIndex, resNames);
+            if (EditorGUI.EndChangeCheck())
+            {
+                EditorPrefs.SetInt(PREFS_RES_INDEX_KEY, selectedResolutionIndex);
+            }
+
+            if (GUILayout.Button("复制对应分辨率的 DSL 规范文档", GUILayout.Height(25)))
+            {
+                CopyDSLToClipboard();
+            }
+
+            GUILayout.EndVertical();
+            GUILayout.Space(10);
+        }
+
         private void DrawExternalToolchainUI()
         {
             GUILayout.Label("外部工具链桥接", EditorStyles.label);
             GUILayout.BeginHorizontal();
 
             EditorGUI.BeginChangeCheck();
-            converterUrl = EditorGUILayout.TextField("HTML转换器路径/URL", converterUrl);
             if (EditorGUI.EndChangeCheck())
             {
                 EditorPrefs.SetString(PREFS_URL_KEY, converterUrl);
@@ -114,10 +200,8 @@ namespace Editor.UIBaker
                 string path = EditorUtility.OpenFilePanel("选择 HTML 转换器", "", "html");
                 if (!string.IsNullOrEmpty(path))
                 {
-                    // 转换为标准的 file:/// 协议格式，确保各大浏览器均能正确解析本地绝对路径
                     converterUrl = "file:///" + path.Replace("\\", "/");
                     EditorPrefs.SetString(PREFS_URL_KEY, converterUrl);
-                    // 强制取消焦点，确保 TextField UI 立即刷新显示新路径
                     GUI.FocusControl(null);
                 }
             }
@@ -146,17 +230,40 @@ namespace Editor.UIBaker
         private void DrawStringModeUI()
         {
             GUILayout.Label("在此粘贴 JSON 文本:", EditorStyles.label);
-
             scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Height(200));
             rawJsonString = EditorGUILayout.TextArea(rawJsonString, GUILayout.ExpandHeight(true));
             GUILayout.EndScrollView();
-
             GUILayout.Space(5);
 
             if (GUILayout.Button("将当前 JSON 保存为文件到工程目录..."))
             {
                 SaveRawJsonToProject();
             }
+        }
+
+        #endregion
+
+        #region 核心业务逻辑
+
+        private void CopyDSLToClipboard()
+        {
+            if (config == null || config.supportedResolutions.Count <= selectedResolutionIndex)
+            {
+                Debug.LogError("[HtmlToUGUIBaker] 复制失败: 配置文件缺失或分辨率索引越界。");
+                return;
+            }
+
+            if (config.dslTemplateAsset == null)
+            {
+                Debug.LogError("[HtmlToUGUIBaker] 复制失败: 配置文件中未指定 DSL 模板文件 (TextAsset)，请在 SO 面板中拖入 .md 模板文件。");
+                return;
+            }
+
+            Vector2 res = config.supportedResolutions[selectedResolutionIndex].resolution;
+            // 读取 TextAsset 内容并动态替换模板中的分辨率占位符
+            string dsl = config.dslTemplateAsset.text.Replace("{WIDTH}", res.x.ToString()).Replace("{HEIGHT}", res.y.ToString());
+            GUIUtility.systemCopyBuffer = dsl;
+            Debug.Log($"[HtmlToUGUIBaker] 已成功复制分辨率为 {res.x}x{res.y} 的 DSL 规范文档到剪贴板。");
         }
 
         private void SaveRawJsonToProject()
@@ -180,7 +287,6 @@ namespace Editor.UIBaker
             {
                 File.WriteAllText(savePath, rawJsonString);
                 AssetDatabase.Refresh();
-
                 TextAsset savedAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(savePath);
                 if (savedAsset != null)
                 {
@@ -204,7 +310,6 @@ namespace Editor.UIBaker
             }
 
             string jsonContent = string.Empty;
-
             if (currentMode == InputMode.FileAsset)
             {
                 if (jsonAsset == null)
@@ -236,21 +341,33 @@ namespace Editor.UIBaker
             }
 
             GameObject rootGo = CreateUINode(rootNode, targetCanvas.transform, 0f, 0f);
-
             Undo.RegisterCreatedObjectUndo(rootGo, "Bake UI Prototype");
             Selection.activeGameObject = rootGo;
 
-            Debug.Log($"[HtmlToUGUIBaker] 烘焙完成: 成功生成 UI 树 [{rootGo.name}]，文本对齐与智能换行已应用。");
+            Debug.Log($"[HtmlToUGUIBaker] 烘焙完成: 成功生成 UI 树 [{rootGo.name}]，当前基准分辨率已适配。");
         }
 
         private void ConfigureCanvasScaler(Canvas canvas)
         {
             CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
             if (scaler == null) scaler = canvas.gameObject.AddComponent<CanvasScaler>();
+
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = REFERENCE_RESOLUTION;
+
+            // 动态应用 SO 中选定的分辨率
+            Vector2 targetRes = new Vector2(1920, 1080);
+            if (config != null && config.supportedResolutions != null && config.supportedResolutions.Count > selectedResolutionIndex)
+            {
+                targetRes = config.supportedResolutions[selectedResolutionIndex].resolution;
+            }
+
+            scaler.referenceResolution = targetRes;
             scaler.matchWidthOrHeight = 0.5f;
         }
+
+        #endregion
+
+        #region 节点生成与组件挂载逻辑
 
         private GameObject CreateUINode(UIDataNode nodeData, Transform parent, float parentAbsX, float parentAbsY)
         {
@@ -264,7 +381,6 @@ namespace Editor.UIBaker
 
             float localX = nodeData.x - parentAbsX;
             float localY = nodeData.y - parentAbsY;
-
             rect.anchoredPosition = new Vector2(localX, -localY);
             rect.sizeDelta = new Vector2(nodeData.width, nodeData.height);
 
@@ -286,7 +402,6 @@ namespace Editor.UIBaker
             Color bgColor = ParseHexColor(nodeData.color, Color.white);
             Color fontColor = ParseHexColor(nodeData.fontColor, Color.black);
             int fontSize = nodeData.fontSize > 0 ? nodeData.fontSize : 24;
-
             TextAlignmentOptions alignment = ParseTextAlign(nodeData.textAlign);
             bool isMultiLine = nodeData.height > (fontSize * 1.5f);
 
@@ -397,7 +512,6 @@ namespace Editor.UIBaker
                     GameObject checkGo = CreateChildRect(tBgGo, "Checkmark", Vector2.zero, Vector2.one);
                     Image checkImg = checkGo.AddComponent<Image>();
                     checkImg.color = Color.black;
-
                     RectTransform checkRect = checkGo.GetComponent<RectTransform>();
                     checkRect.offsetMin = new Vector2(4, 4);
                     checkRect.offsetMax = new Vector2(-4, -4);
@@ -467,6 +581,7 @@ namespace Editor.UIBaker
                     templateRect.anchoredPosition = new Vector2(0, -2);
                     Image tempImg = templateGo.AddComponent<Image>();
                     tempImg.color = Color.white;
+
                     ScrollRect tempScroll = templateGo.AddComponent<ScrollRect>();
                     tempScroll.horizontal = false;
                     tempScroll.vertical = true;
@@ -534,7 +649,6 @@ namespace Editor.UIBaker
         private TextAlignmentOptions ParseTextAlign(string alignStr)
         {
             if (string.IsNullOrEmpty(alignStr)) return TextAlignmentOptions.Midline;
-
             switch (alignStr.ToLower())
             {
                 case "left":
@@ -567,5 +681,7 @@ namespace Editor.UIBaker
             if (ColorUtility.TryParseHtmlString(hex, out Color color)) return color;
             return defaultColor;
         }
+
+        #endregion
     }
 }

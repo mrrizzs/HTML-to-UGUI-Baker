@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>HTML to JSON UI Baker (Streamlined)</title>
+    <style>
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #d4d4d4; overflow: hidden; }
+
+        .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background-color: #252526; border-bottom: 1px solid #3e3e42; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; }
+        .toolbar-title { font-size: 16px; font-weight: bold; color: #fff; }
+        .toolbar-actions { display: flex; gap: 10px; }
+
+        button { background-color: #0e639c; color: white; border: none; padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; transition: all 0.2s; }
+        button:hover { background-color: #1177bb; }
+        button.btn-success { background-color: #28a745; font-size: 14px; padding: 8px 24px; }
+        button.btn-success:hover { background-color: #218838; }
+
+        .main-content { display: flex; flex: 1; overflow: hidden; }
+
+        .panel-left { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #333; }
+        .panel-header { padding: 8px 15px; background-color: #2d2d2d; border-bottom: 1px solid #3e3e42; font-size: 12px; color: #9cdcfe; display: flex; justify-content: space-between; }
+        textarea { flex: 1; background-color: #1e1e1e; color: #d4d4d4; border: none; padding: 15px; font-family: Consolas, monospace; font-size: 14px; resize: none; outline: none; }
+
+        .panel-right { flex: 1; display: flex; flex-direction: column; }
+
+        #preview-container { flex: 6; background-color: #2d2d2d; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+
+        /* 移除 transition 属性，防止 getBoundingClientRect 获取到动画中间态导致坐标计算错误 */
+        #canvas-sandbox { background-color: #ffffff; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); transform-origin: center center; }
+
+        #canvas-sandbox * { box-sizing: border-box !important; }
+        #canvas-sandbox [data-u-type] { min-width: 0; min-height: 0; }
+
+        .json-output-container { flex: 4; display: flex; flex-direction: column; border-top: 1px solid #333; }
+        #json-output { background-color: #252526; color: #ce9178; }
+    </style>
+</head>
+<body>
+
+<div class="toolbar">
+    <div class="toolbar-title">UI 原型烘焙器 (全自动一键流)</div>
+    <div class="toolbar-actions">
+        <button onclick="renderAndFit()">仅预览</button>
+        <button id="btn-bake-copy" onclick="bakeAndCopyJSON()" class="btn-success">一键烘焙并复制 JSON</button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="panel-left">
+        <div class="panel-header">HTML 代码输入区 (支持任意基准分辨率)</div>
+        <textarea id="code-editor" placeholder="在此粘贴带有 data-u-name 和 data-u-type 的 HTML 代码..."></textarea>
+    </div>
+
+    <div class="panel-right">
+        <div class="panel-header">
+            <span>可视化预览 (自动缩放适配屏幕)</span>
+            <span id="scale-info" style="color: #6a9955;">Scale: 100%</span>
+        </div>
+        <div id="preview-container">
+            <div id="canvas-sandbox"></div>
+        </div>
+
+        <div class="json-output-container">
+            <div class="panel-header">JSON 数据 (已自动复制到剪贴板)</div>
+            <textarea id="json-output" readonly></textarea>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentScale = 1.0;
+
+    function renderAndFit() {
+        const code = document.getElementById('code-editor').value;
+        const sandbox = document.getElementById('canvas-sandbox');
+        sandbox.innerHTML = code;
+
+        const rootNode = sandbox.querySelector('[data-u-type]');
+        if (rootNode) {
+            sandbox.style.width = rootNode.style.width || window.getComputedStyle(rootNode).width;
+            sandbox.style.height = rootNode.style.height || window.getComputedStyle(rootNode).height;
+        }
+
+        fitPreviewScale();
+    }
+
+    function fitPreviewScale() {
+        const container = document.getElementById('preview-container');
+        const sandbox = document.getElementById('canvas-sandbox');
+
+        if (!sandbox.style.width) return;
+
+        const containerWidth = container.clientWidth - 40;
+        const containerHeight = container.clientHeight - 40;
+
+        const sandboxWidth = parseFloat(sandbox.style.width);
+        const sandboxHeight = parseFloat(sandbox.style.height);
+
+        if (!sandboxWidth || !sandboxHeight) return;
+
+        const scaleX = containerWidth / sandboxWidth;
+        const scaleY = containerHeight / sandboxHeight;
+        currentScale = Math.min(scaleX, scaleY, 1.0);
+
+        sandbox.style.transform = `scale(${currentScale})`;
+        document.getElementById('scale-info').innerText = `Scale: ${Math.round(currentScale * 100)}%`;
+    }
+
+    window.addEventListener('resize', () => {
+        if (document.getElementById('canvas-sandbox').innerHTML.trim() !== "") {
+            fitPreviewScale();
+        }
+    });
+
+    function bakeAndCopyJSON() {
+        renderAndFit();
+
+        const sandbox = document.getElementById('canvas-sandbox');
+        const rootElement = sandbox.querySelector('[data-u-name]');
+
+        if (!rootElement) {
+            alert("[拦截] 未找到包含 data-u-name 的根节点！请检查 HTML 规范。");
+            return;
+        }
+
+        const rootRect = rootElement.getBoundingClientRect();
+        const uiData = traverseAndBake(rootElement, rootRect);
+
+        const jsonOutput = document.getElementById('json-output');
+        jsonOutput.value = JSON.stringify(uiData, null, 2);
+
+        jsonOutput.select();
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+
+        const btn = document.getElementById('btn-bake-copy');
+        const originalText = btn.innerText;
+        btn.innerText = "烘焙并复制成功！去 Unity 粘贴吧";
+        btn.style.backgroundColor = "#218838";
+
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.backgroundColor = "";
+        }, 2000);
+    }
+
+    function traverseAndBake(element, rootRect) {
+        const uType = element.getAttribute('data-u-type');
+        const uName = element.getAttribute('data-u-name');
+
+        let nodeData = null;
+
+        if (uType && uName) {
+            const rect = element.getBoundingClientRect();
+            const style = window.getComputedStyle(element);
+
+            const relativeX = (rect.left - rootRect.left) / currentScale;
+            const relativeY = (rect.top - rootRect.top) / currentScale;
+            const realWidth = rect.width / currentScale;
+            const realHeight = rect.height / currentScale;
+
+            let textContent = element.innerText || "";
+            if (element.tagName.toLowerCase() === 'input') {
+                textContent = element.value || element.placeholder || "";
+            }
+
+            let fontSize = 14;
+            if (style.fontSize) fontSize = parseFloat(style.fontSize);
+
+            let textAlign = style.textAlign || 'center';
+
+            let uDir = element.getAttribute('data-u-dir') || 'v';
+            let uValue = parseFloat(element.getAttribute('data-u-value')) || 0.5;
+            let uChecked = element.getAttribute('data-u-checked') === 'true';
+            let uOptions = [];
+
+            if (uType === 'dropdown' && element.tagName.toLowerCase() === 'select') {
+                const opts = element.querySelectorAll('option');
+                opts.forEach(opt => uOptions.push(opt.innerText.trim()));
+            }
+
+            nodeData = {
+                name: uName,
+                type: uType,
+                dir: uDir,
+                value: uValue,
+                isChecked: uChecked,
+                options: uOptions,
+                x: Math.round(relativeX),
+                y: Math.round(relativeY),
+                width: Math.round(realWidth),
+                height: Math.round(realHeight),
+                color: rgb2hex(style.backgroundColor),
+                fontColor: rgb2hex(style.color),
+                fontSize: Math.round(fontSize),
+                textAlign: textAlign,
+                text: textContent.trim(),
+                children: []
+            };
+        }
+
+        const childrenData = [];
+        for (let i = 0; i < element.children.length; i++) {
+            if (element.tagName.toLowerCase() === 'select' && element.children[i].tagName.toLowerCase() === 'option') {
+                continue;
+            }
+            const childResult = traverseAndBake(element.children[i], rootRect);
+            if (childResult) childrenData.push(childResult);
+        }
+
+        if (nodeData) {
+            nodeData.children = childrenData;
+            return nodeData;
+        } else if (childrenData.length > 0) {
+            return childrenData.length === 1 ? childrenData[0] : {
+                name: "layoutGroup_" + Math.random().toString(36).substr(2, 5),
+                type: "div", dir: "v", value: 0, isChecked: false, options: [],
+                x: 0, y: 0, width: 0, height: 0,
+                color: "#FFFFFF00", fontColor: "#000000", fontSize: 14, textAlign: "center", text: "", children: childrenData
+            };
+        }
+
+        return null;
+    }
+
+    function rgb2hex(rgb) {
+        if (!rgb || rgb === 'rgba(0, 0, 0, 0)' || rgb === 'transparent') return '#FFFFFF00';
+        const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
+        if (!match) return '#FFFFFF';
+        const r = ("0" + parseInt(match[1], 10).toString(16)).slice(-2);
+        const g = ("0" + parseInt(match[2], 10).toString(16)).slice(-2);
+        const b = ("0" + parseInt(match[3], 10).toString(16)).slice(-2);
+        const a = match[4] ? ("0" + Math.round(parseFloat(match[4]) * 255).toString(16)).slice(-2) : "ff";
+        return `#${r}${g}${b}${a === 'ff' ? '' : a}`;
+    }
+</script>
+</body>
+</html>
